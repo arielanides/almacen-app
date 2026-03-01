@@ -70,12 +70,6 @@ body {
 
 /* Bottom nav */
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
   height: calc(var(--nav-h) + var(--safe-bottom));
   background: var(--surface);
   border-top: 2px solid var(--border);
@@ -83,8 +77,8 @@ body {
   align-items: flex-start;
   justify-content: space-around;
   padding-top: 8px;
-  z-index: 100;
   box-shadow: 0 -4px 20px rgba(44,36,22,0.08);
+  flex-shrink: 0;
 }
 
 .nav-item {
