@@ -10,21 +10,18 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      {/* Toast */}
       {toast && (
         <div key={toast.id} className={`toast ${toast.type}`}>
           {toast.message}
         </div>
       )}
 
-      {/* Pages */}
       <div className="page-content">
         {tab === 'venta' && <VentaPage showToast={showToast} />}
         {tab === 'stock' && <StockPage showToast={showToast} />}
         {tab === 'historial' && <HistorialPage showToast={showToast} />}
       </div>
 
-      {/* Bottom Nav */}
       <nav className="bottom-nav">
         <button className={`nav-item ${tab === 'venta' ? 'active' : ''}`} onClick={() => setTab('venta')}>
           <CartIcon />

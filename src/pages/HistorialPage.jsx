@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 
 function formatPrice(n) {
@@ -8,14 +8,15 @@ function formatPrice(n) {
 function formatDate(str) {
   const d = new Date(str)
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
-    + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+    + ' · ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function HistorialPage({ showToast }) {
   const [ventas, setVentas] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(null)
-  const [items, setItems] = useState({}) // { venta_id: [] }
+  const [items, setItems] = useState({})
+  const [filtro, setFiltro] = useState('todas')
 
   useEffect(() => { loadVentas() }, [])
 
@@ -25,7 +26,7 @@ export default function HistorialPage({ showToast }) {
       .from('ventas')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(50)
+      .limit(100)
     setVentas(data || [])
     setLoading(false)
   }
@@ -34,19 +35,21 @@ export default function HistorialPage({ showToast }) {
     if (expanded === venta.id) { setExpanded(null); return }
     setExpanded(venta.id)
     if (!items[venta.id]) {
-      const { data } = await supabase
-        .from('venta_items')
-        .select('*')
-        .eq('venta_id', venta.id)
+      const { data } = await supabase.from('venta_items').select('*').eq('venta_id', venta.id)
       setItems(prev => ({ ...prev, [venta.id]: data || [] }))
     }
   }
 
-  // Stats
   const hoy = new Date().toDateString()
   const ventasHoy = ventas.filter(v => new Date(v.created_at).toDateString() === hoy)
   const totalHoy = ventasHoy.reduce((s, v) => s + Number(v.total), 0)
-  const totalHistorico = ventas.reduce((s, v) => s + Number(v.total), 0)
+  const totalEfectivo = ventas.filter(v => v.metodo_pago === 'efectivo').reduce((s, v) => s + Number(v.total), 0)
+  const totalMP = ventas.filter(v => v.metodo_pago === 'mp').reduce((s, v) => s + Number(v.total), 0)
+
+  const ventasFiltradas = useMemo(() => {
+    if (filtro === 'todas') return ventas
+    return ventas.filter(v => v.metodo_pago === filtro)
+  }, [ventas, filtro])
 
   if (loading) return (
     <div className="loading-screen">
@@ -58,8 +61,8 @@ export default function HistorialPage({ showToast }) {
   return (
     <div className="page-content">
       <div className="page-header">
-        <div className="page-title"><span className="accent-dot" />Historial</div>
-        <div className="page-subtitle">Últimas 50 ventas</div>
+        <div className="page-title">📊 Historial</div>
+        <div className="page-subtitle">Últimas 100 ventas</div>
       </div>
 
       <div className="page-scroll">
@@ -73,38 +76,60 @@ export default function HistorialPage({ showToast }) {
             <div className="stat-label">Total hoy</div>
             <div className="stat-value" style={{ fontSize: 18 }}>{formatPrice(totalHoy)}</div>
           </div>
-          <div className="stat-card" style={{ gridColumn: 'span 2' }}>
-            <div className="stat-label">Total acumulado (50 últimas)</div>
-            <div className="stat-value green" style={{ fontSize: 20 }}>{formatPrice(totalHistorico)}</div>
+          <div className="stat-card">
+            <div className="stat-label">💵 Efectivo</div>
+            <div className="stat-value green" style={{ fontSize: 18 }}>{formatPrice(totalEfectivo)}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">📱 MercadoPago</div>
+            <div className="stat-value blue" style={{ fontSize: 18 }}>{formatPrice(totalMP)}</div>
           </div>
         </div>
 
+        {/* Filtros */}
+        <div className="filtros-bar">
+          <button className={`filtro-btn ${filtro === 'todas' ? 'active' : ''}`} onClick={() => setFiltro('todas')}>
+            Todas ({ventas.length})
+          </button>
+          <button className={`filtro-btn ${filtro === 'efectivo' ? 'active' : ''}`} onClick={() => setFiltro('efectivo')}>
+            💵 Efectivo ({ventas.filter(v => v.metodo_pago === 'efectivo').length})
+          </button>
+          <button className={`filtro-btn ${filtro === 'mp' ? 'active-mp' : ''}`} onClick={() => setFiltro('mp')}>
+            📱 MercadoPago ({ventas.filter(v => v.metodo_pago === 'mp').length})
+          </button>
+        </div>
+
         {/* Lista */}
-        <div style={{ padding: '0 16px 8px' }}>
-          {ventas.length === 0 ? (
+        <div style={{ padding: '10px 12px 8px' }}>
+          {ventasFiltradas.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📊</div>
-              <div className="empty-text">Sin ventas aún</div>
-              <div className="empty-sub">Las ventas registradas aparecerán aquí</div>
+              <div className="empty-text">Sin ventas</div>
+              <div className="empty-sub">No hay ventas con este filtro</div>
             </div>
-          ) : ventas.map(v => (
-            <div key={v.id} className="venta-item" onClick={() => toggleExpand(v)} style={{ cursor: 'pointer' }}>
+          ) : ventasFiltradas.map(v => (
+            <div key={v.id} className="venta-item" onClick={() => toggleExpand(v)}>
               <div className="venta-row">
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{formatPrice(v.total)}</div>
+                  <div className="mono" style={{ fontSize: 18, fontWeight: 500, color: 'var(--accent)' }}>{formatPrice(v.total)}</div>
                   <div className="venta-date">{formatDate(v.created_at)}</div>
                 </div>
-                <div style={{ color: 'var(--text3)', fontSize: 20 }}>
-                  {expanded === v.id ? '▲' : '▼'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className={`pago-badge ${v.metodo_pago === 'mp' ? 'mp' : 'efectivo'}`}>
+                    {v.metodo_pago === 'mp' ? '📱 MP' : '💵 Efectivo'}
+                  </span>
+                  <span style={{ color: 'var(--text3)', fontSize: 16 }}>
+                    {expanded === v.id ? '▲' : '▼'}
+                  </span>
                 </div>
               </div>
 
               {expanded === v.id && items[v.id] && (
-                <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                   {items[v.id].map(item => (
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
-                      <span style={{ fontSize: 13, flex: 1, color: 'var(--text2)' }}>{item.nombre_producto}</span>
-                      <span style={{ fontSize: 13, color: 'var(--text3)', marginRight: 10 }}>x{item.cantidad}</span>
+                      <span style={{ fontSize: 13, flex: 1, color: 'var(--text2)', fontFamily: 'Lora, serif' }}>{item.nombre_producto}</span>
+                      <span className="sans" style={{ fontSize: 13, color: 'var(--text3)', marginRight: 10 }}>x{item.cantidad}</span>
                       <span className="mono" style={{ fontSize: 13 }}>{formatPrice(item.subtotal)}</span>
                     </div>
                   ))}

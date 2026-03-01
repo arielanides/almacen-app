@@ -18,6 +18,7 @@ CREATE TABLE productos (
 CREATE TABLE ventas (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   total NUMERIC(10,2) NOT NULL DEFAULT 0,
+  metodo_pago TEXT NOT NULL DEFAULT 'efectivo', -- 'efectivo' | 'mp'
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
