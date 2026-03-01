@@ -102,7 +102,7 @@ export default function VentaPage({ showToast }) {
   )
 
   return (
-    <div className="page-content">
+    <>
       {/* Header */}
       <div className="page-header">
         <div className="page-title">🛒 Nueva Venta</div>
@@ -194,7 +194,6 @@ export default function VentaPage({ showToast }) {
               <div className="sheet-title">Confirmar venta</div>
             </div>
             <div className="sheet-body">
-              {/* Items */}
               {Object.entries(cart).map(([id, qty]) => {
                 const p = productos.find(x => x.id === id)
                 if (!p) return null
@@ -212,7 +211,6 @@ export default function VentaPage({ showToast }) {
                 <span className="mono" style={{ fontSize: 26, color: 'var(--accent)' }}>{formatPrice(total)}</span>
               </div>
 
-              {/* Método de pago */}
               <div className="sans" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text3)', marginBottom: 10 }}>Método de pago</div>
               <div className="pago-selector">
                 <button
@@ -244,7 +242,7 @@ export default function VentaPage({ showToast }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 

@@ -59,14 +59,13 @@ export default function HistorialPage({ showToast }) {
   )
 
   return (
-    <div className="page-content">
+    <>
       <div className="page-header">
         <div className="page-title">📊 Historial</div>
         <div className="page-subtitle">Últimas 100 ventas</div>
       </div>
 
       <div className="page-scroll">
-        {/* Stats */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-label">Ventas hoy</div>
@@ -86,7 +85,6 @@ export default function HistorialPage({ showToast }) {
           </div>
         </div>
 
-        {/* Filtros */}
         <div className="filtros-bar">
           <button className={`filtro-btn ${filtro === 'todas' ? 'active' : ''}`} onClick={() => setFiltro('todas')}>
             Todas ({ventas.length})
@@ -99,7 +97,6 @@ export default function HistorialPage({ showToast }) {
           </button>
         </div>
 
-        {/* Lista */}
         <div style={{ padding: '10px 12px 8px' }}>
           {ventasFiltradas.length === 0 ? (
             <div className="empty-state">
@@ -139,6 +136,6 @@ export default function HistorialPage({ showToast }) {
           ))}
         </div>
       </div>
-    </div>
+    </>
   )
 }

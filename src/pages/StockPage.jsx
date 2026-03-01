@@ -9,7 +9,7 @@ export default function StockPage({ showToast }) {
   const [productos, setProductos] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [sheet, setSheet] = useState(null) // null | 'nuevo' | 'editar' | 'ingreso'
+  const [sheet, setSheet] = useState(null)
   const [selected, setSelected] = useState(null)
   const [form, setForm] = useState({ nombre: '', precio_compra: '', precio_venta: '', stock: '' })
   const [ingresoForm, setIngresoForm] = useState({ cantidad: '', precio_compra: '' })
@@ -45,10 +45,7 @@ export default function StockPage({ showToast }) {
     setSheet('ingreso')
   }
 
-  function closeSheet() {
-    setSheet(null)
-    setSelected(null)
-  }
+  function closeSheet() { setSheet(null); setSelected(null) }
 
   async function saveProducto() {
     if (!form.nombre.trim()) { showToast('Ingresá un nombre', 'error'); return }
@@ -59,7 +56,6 @@ export default function StockPage({ showToast }) {
       precio_venta: parseFloat(form.precio_venta) || 0,
       stock: parseInt(form.stock) || 0,
     }
-
     if (sheet === 'nuevo') {
       const { error } = await supabase.from('productos').insert(data)
       if (error) { showToast('Error al guardar', 'error'); setSaving(false); return }
@@ -69,7 +65,6 @@ export default function StockPage({ showToast }) {
       if (error) { showToast('Error al guardar', 'error'); setSaving(false); return }
       showToast('✓ Producto actualizado!', 'success')
     }
-
     setSaving(false)
     closeSheet()
     loadProductos()
@@ -79,23 +74,17 @@ export default function StockPage({ showToast }) {
     const cant = parseInt(ingresoForm.cantidad)
     if (!cant || cant <= 0) { showToast('Ingresá una cantidad válida', 'error'); return }
     setSaving(true)
-
     const pc = parseFloat(ingresoForm.precio_compra) || selected.precio_compra
-
-    // Registrar ingreso
     await supabase.from('ingresos').insert({
       producto_id: selected.id,
       nombre_producto: selected.nombre,
       cantidad: cant,
       precio_compra: pc,
     })
-
-    // Actualizar stock y precio compra
     await supabase.from('productos').update({
       stock: selected.stock + cant,
       precio_compra: pc,
     }).eq('id', selected.id)
-
     showToast(`✓ +${cant} unidades ingresadas!`, 'success')
     setSaving(false)
     closeSheet()
@@ -118,10 +107,10 @@ export default function StockPage({ showToast }) {
   )
 
   return (
-    <div className="page-content">
+    <>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div className="page-title"><span className="accent-dot" />Stock</div>
+          <div className="page-title">📦 Stock</div>
           <div className="page-subtitle">{productos.length} productos</div>
         </div>
         <button className="btn-primary" style={{ marginTop: 4 }} onClick={openNuevo}>+ Nuevo</button>
@@ -144,25 +133,21 @@ export default function StockPage({ showToast }) {
         ) : (
           <div className="product-list">
             {filtered.map(p => (
-              <div
-                key={p.id}
-                className="product-card"
-                onClick={() => openEditar(p)}
-              >
+              <div key={p.id} className="product-card" onClick={() => openEditar(p)}>
                 <div className="product-info">
                   <div className="product-name">{p.nombre}</div>
                   <div className="product-meta">
                     <span className={`product-stock ${p.stock <= 3 && p.stock > 0 ? 'stock-low' : p.stock === 0 ? 'stock-out' : ''}`}>
                       {p.stock === 0 ? '⚠ Sin stock' : `Stock: ${p.stock}`}
                     </span>
-                    <span style={{ fontSize: 12, color: 'var(--text3)' }}>costo: {formatPrice(p.precio_compra)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'DM Mono, monospace' }}>costo: {formatPrice(p.precio_compra)}</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <div className="product-price">{formatPrice(p.precio_venta)}</div>
                   <button
                     className="btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: 12 }}
+                    style={{ padding: '6px 12px', fontSize: 12, fontFamily: 'Nunito, sans-serif' }}
                     onClick={e => { e.stopPropagation(); openIngreso(p) }}
                   >+ Ingreso</button>
                 </div>
@@ -183,7 +168,7 @@ export default function StockPage({ showToast }) {
             <div className="sheet-body">
               <div className="form-group">
                 <label className="form-label">Nombre</label>
-                <input className="form-input" placeholder="Ej: Coca Cola 600ml" value={form.nombre} onChange={e => setForm(f => ({...f, nombre: e.target.value}))} style={{fontFamily:'Syne,sans-serif'}} />
+                <input className="form-input" placeholder="Ej: Coca Cola 600ml" value={form.nombre} onChange={e => setForm(f => ({...f, nombre: e.target.value}))} style={{fontFamily:'Lora,serif'}} />
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -224,7 +209,7 @@ export default function StockPage({ showToast }) {
             <div className="sheet-body">
               <div style={{ background: 'var(--surface2)', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{selected.nombre}</div>
-                <div style={{ color: 'var(--text2)', fontSize: 13, marginTop: 4 }}>Stock actual: {selected.stock} unidades</div>
+                <div style={{ color: 'var(--text2)', fontSize: 13, marginTop: 4, fontFamily: 'Nunito, sans-serif' }}>Stock actual: {selected.stock} unidades</div>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -237,7 +222,7 @@ export default function StockPage({ showToast }) {
                 </div>
               </div>
               {ingresoForm.cantidad && (
-                <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 16 }}>
+                <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 16, fontFamily: 'Nunito, sans-serif' }}>
                   Stock resultante: <span style={{ color: 'var(--success)', fontWeight: 700 }}>{selected.stock + (parseInt(ingresoForm.cantidad) || 0)}</span> unidades
                 </div>
               )}
@@ -251,7 +236,7 @@ export default function StockPage({ showToast }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
