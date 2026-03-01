@@ -555,5 +555,6 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  min-height: 0;
   padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
 }
