@@ -220,7 +220,7 @@ body {
 
 /* ===== TOTAL BAR ===== */
 .total-bar {
-  background: var(--surface);
+  background: var(--surface3);
   border-top: 2px solid var(--border);
   padding: 10px 12px;
   display: flex;
