@@ -14,6 +14,7 @@ export default function StockPage({ showToast }) {
   const [form, setForm] = useState({ nombre: '', precio_compra: '', precio_venta: '', stock: '' })
   const [ingresoForm, setIngresoForm] = useState({ cantidad: '', precio_compra: '' })
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   useEffect(() => { loadProductos() }, [])
 
@@ -91,11 +92,12 @@ export default function StockPage({ showToast }) {
     loadProductos()
   }
 
-  async function eliminarProducto() {
-    if (!confirm('¿Eliminar este producto?')) return
-    await supabase.from('productos').delete().eq('id', selected.id)
+  async function eliminarProducto(p) {
+    setSaving(true)
+    await supabase.from('productos').delete().eq('id', p.id)
     showToast('Producto eliminado', 'success')
-    closeSheet()
+    setConfirmDelete(null)
+    setSaving(false)
     loadProductos()
   }
 
@@ -138,24 +140,81 @@ export default function StockPage({ showToast }) {
                   <div className="product-name">{p.nombre}</div>
                   <div className="product-meta">
                     <span className={`product-stock ${p.stock <= 3 && p.stock > 0 ? 'stock-low' : p.stock === 0 ? 'stock-out' : ''}`}>
-                      {p.stock === 0 ? '⚠ Sin stock' : `Stock: ${p.stock}`}
+                      {p.stock === 0 ? '⚠ Sin stock' : `${p.stock} unidades`}
                     </span>
-                    <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'DM Mono, monospace' }}>costo: {formatPrice(p.precio_compra)}</span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                  <div className="product-price">{formatPrice(p.precio_venta)}</div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* Botón ingreso */}
                   <button
-                    className="btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: 12, fontFamily: 'Nunito, sans-serif' }}
+                    style={{
+                      background: 'var(--accent-bg)',
+                      border: '1.5px solid var(--accent)',
+                      borderRadius: 8,
+                      padding: '7px 11px',
+                      fontSize: 12,
+                      fontFamily: 'Nunito, sans-serif',
+                      fontWeight: 800,
+                      color: 'var(--accent)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
                     onClick={e => { e.stopPropagation(); openIngreso(p) }}
-                  >+ Ingreso</button>
+                  >+ Stock</button>
+
+                  {/* Tachito */}
+                  <button
+                    style={{
+                      background: 'transparent',
+                      border: '1.5px solid var(--border)',
+                      borderRadius: 8,
+                      width: 36,
+                      height: 36,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: 'var(--text3)',
+                      flexShrink: 0
+                    }}
+                    onClick={e => { e.stopPropagation(); setConfirmDelete(p) }}
+                  >
+                    <TrashIcon />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Confirm delete */}
+      {confirmDelete && (
+        <div className="sheet-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="sheet" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle" />
+            <div className="sheet-body" style={{ textAlign: 'center', paddingTop: 10 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+              <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Eliminar producto</div>
+              <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 24, fontFamily: 'Nunito, sans-serif' }}>
+                ¿Seguro que querés eliminar <strong>{confirmDelete.nombre}</strong>? Esta acción no se puede deshacer.
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setConfirmDelete(null)}>Cancelar</button>
+                <button
+                  className="btn-danger"
+                  style={{ flex: 1, background: 'var(--danger)', color: 'white', border: 'none', borderRadius: 10, padding: '13px 20px', fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}
+                  onClick={() => eliminarProducto(confirmDelete)}
+                  disabled={saving}
+                >
+                  {saving ? 'Eliminando...' : 'Sí, eliminar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sheet nuevo/editar */}
       {(sheet === 'nuevo' || sheet === 'editar') && (
@@ -181,13 +240,10 @@ export default function StockPage({ showToast }) {
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Stock inicial</label>
+                <label className="form-label">Stock</label>
                 <input className="form-input" type="number" placeholder="0" value={form.stock} onChange={e => setForm(f => ({...f, stock: e.target.value}))} />
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                {sheet === 'editar' && (
-                  <button className="btn-danger" onClick={eliminarProducto}>Eliminar</button>
-                )}
                 <button className="btn-secondary" style={{ flex: 1 }} onClick={closeSheet}>Cancelar</button>
                 <button className="btn-primary" style={{ flex: 2 }} onClick={saveProducto} disabled={saving}>
                   {saving ? 'Guardando...' : 'Guardar'}
@@ -209,7 +265,9 @@ export default function StockPage({ showToast }) {
             <div className="sheet-body">
               <div style={{ background: 'var(--surface2)', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{selected.nombre}</div>
-                <div style={{ color: 'var(--text2)', fontSize: 13, marginTop: 4, fontFamily: 'Nunito, sans-serif' }}>Stock actual: {selected.stock} unidades</div>
+                <div style={{ color: 'var(--text2)', fontSize: 13, marginTop: 4, fontFamily: 'Nunito, sans-serif' }}>
+                  Stock actual: <strong>{selected.stock}</strong> unidades
+                </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -245,6 +303,17 @@ function SearchIcon({ className }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="11" cy="11" r="8"/>
       <path d="m21 21-4.35-4.35"/>
+    </svg>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+      <path d="M10 11v6M14 11v6"/>
+      <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
     </svg>
   )
 }
