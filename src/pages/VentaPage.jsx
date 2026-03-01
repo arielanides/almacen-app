@@ -18,7 +18,7 @@ export default function VentaPage({ showToast }) {
 
   async function loadProductos() {
     setLoading(true)
-    const { data } = await supabase.from('productos').select('*').order('nombre')
+    const { data } = await supabase.from('productos').select('*').eq('activo', true).order('nombre')
     setProductos(data || [])
     setLoading(false)
   }

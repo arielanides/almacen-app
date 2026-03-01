@@ -20,7 +20,7 @@ export default function StockPage({ showToast }) {
 
   async function loadProductos() {
     setLoading(true)
-    const { data } = await supabase.from('productos').select('*').order('nombre')
+    const { data } = await supabase.from('productos').select('*').eq('activo', true).order('nombre')
     setProductos(data || [])
     setLoading(false)
   }
@@ -94,7 +94,7 @@ export default function StockPage({ showToast }) {
 
   async function eliminarProducto(p) {
     setSaving(true)
-    await supabase.from('productos').delete().eq('id', p.id)
+    await supabase.from('productos').update({ activo: false }).eq('id', p.id)
     showToast('Producto eliminado', 'success')
     setConfirmDelete(null)
     setSaving(false)
