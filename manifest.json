@@ -2,7 +2,7 @@
   "name": "Almacén Manager",
   "short_name": "Almacén",
   "description": "Gestión de stock y ventas",
-  "start_url": "/",
+  "start_url": "https://arielanides.github.io/almacen-app/",
   "display": "standalone",
   "background_color": "#0f1117",
   "theme_color": "#0f1117",
